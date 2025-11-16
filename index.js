@@ -13,6 +13,11 @@ const io = new Server(http, {
 app.use(cors());
 app.use(express.json());
 
+app.get("/healthz", (req, res) => {
+  res.status(200).send("OK");
+});
+
+
 // ======================================================
 // ROUTE TEST
 // ======================================================
