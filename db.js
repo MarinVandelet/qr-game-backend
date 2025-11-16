@@ -1,34 +1,42 @@
-const Database = require('better-sqlite3');
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
 
-// Création auto du fichier
-const db = new Database('database.db');
+const dbPath = path.join(__dirname, "database.db");
 
-// Création des tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS players (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    firstName TEXT NOT NULL,
-    lastName TEXT NOT NULL,
-    createdAt TEXT NOT NULL
-  );
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error("Erreur DB:", err);
+  } else {
+    console.log("SQLite OK");
+  }
+});
 
-  CREATE TABLE IF NOT EXISTS rooms (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT NOT NULL UNIQUE,
-    ownerId INTEGER NOT NULL,
-    createdAt TEXT NOT NULL,
-    FOREIGN KEY(ownerId) REFERENCES players(id)
-  );
+// Convertir des fonctions sync en promises
+function run(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, function (err) {
+      if (err) reject(err);
+      else resolve({ lastID: this.lastID, changes: this.changes });
+    });
+  });
+}
 
-  CREATE TABLE IF NOT EXISTS room_players (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    playerId INTEGER NOT NULL,
-    roomId INTEGER NOT NULL,
-    isOwner INTEGER NOT NULL DEFAULT 0,
-    joinedAt TEXT NOT NULL,
-    FOREIGN KEY(playerId) REFERENCES players(id),
-    FOREIGN KEY(roomId) REFERENCES rooms(id)
-  );
-`);
+function get(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
 
-module.exports = db;
+function all(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+}
+
+module.exports = { db, run, get, all };
