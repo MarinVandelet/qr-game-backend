@@ -4,35 +4,32 @@ const path = require("path");
 const dbPath = path.join(__dirname, "database.db");
 
 const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error("Erreur DB:", err);
-  } else {
-    console.log("SQLite OK");
-  }
+  if (err) console.error("Erreur DB:", err);
+  else console.log("SQLite connecté :", dbPath);
 });
 
-// Convertir des fonctions sync en promises
-function run(sql, params = []) {
+// Promisification simple pour un usage async/await
+function run(query, params = []) {
   return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
+    db.run(query, params, function (err) {
       if (err) reject(err);
-      else resolve({ lastID: this.lastID, changes: this.changes });
+      else resolve(this);
     });
   });
 }
 
-function get(sql, params = []) {
+function get(query, params = []) {
   return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
+    db.get(query, params, function (err, row) {
       if (err) reject(err);
       else resolve(row);
     });
   });
 }
 
-function all(sql, params = []) {
+function all(query, params = []) {
   return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
+    db.all(query, params, function (err, rows) {
       if (err) reject(err);
       else resolve(rows);
     });
