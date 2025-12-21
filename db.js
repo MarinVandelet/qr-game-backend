@@ -1,39 +1,34 @@
-const sqlite3 = require("sqlite3").verbose();
-const path = require("path");
+const Database = require('better-sqlite3');
 
-const dbPath = path.join(__dirname, "database.db");
+// Création auto du fichier
+const db = new Database('database.db');
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) console.error("Erreur DB:", err);
-  else console.log("SQLite connecté :", dbPath);
-});
+// Création des tables
+db.exec(`
+  CREATE TABLE IF NOT EXISTS players (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    firstName TEXT NOT NULL,
+    lastName TEXT NOT NULL,
+    createdAt TEXT NOT NULL
+  );
 
-// Promisification simple pour un usage async/await
-function run(query, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(query, params, function (err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
-}
+  CREATE TABLE IF NOT EXISTS rooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    ownerId INTEGER NOT NULL,
+    createdAt TEXT NOT NULL,
+    FOREIGN KEY(ownerId) REFERENCES players(id)
+  );
 
-function get(query, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(query, params, function (err, row) {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-}
+  CREATE TABLE IF NOT EXISTS room_players (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    playerId INTEGER NOT NULL,
+    roomId INTEGER NOT NULL,
+    isOwner INTEGER NOT NULL DEFAULT 0,
+    joinedAt TEXT NOT NULL,
+    FOREIGN KEY(playerId) REFERENCES players(id),
+    FOREIGN KEY(roomId) REFERENCES rooms(id)
+  );
+`);
 
-function all(query, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(query, params, function (err, rows) {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
-}
-
-module.exports = { db, run, get, all };
+module.exports = db;
